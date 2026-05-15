@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { BentoCard } from '@/components/ui/BentoCard';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +46,8 @@ import {
   BrainCircuit,
   Info,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  LogOut
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { 
@@ -79,11 +82,13 @@ interface ProfileData {
 }
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [data, setData] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -118,6 +123,14 @@ export default function ProfilePage() {
       toast.error(result.error || 'Gagal memperbarui profil');
     }
     setIsUpdating(false);
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
   };
 
   const handleShare = async (platform: string) => {
@@ -258,6 +271,16 @@ export default function ProfilePage() {
                   <DropdownMenuItem onClick={() => handleShare('WhatsApp')}>WhatsApp</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+
+              <Button
+                variant="outline"
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="gap-2 bg-error/10 border-error/30 text-error hover:bg-error/20 hover:text-error"
+              >
+                <LogOut className="w-4 h-4" />
+                {isLoggingOut ? 'Keluar...' : 'Keluar'}
+              </Button>
             </div>
           </div>
 

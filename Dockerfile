@@ -9,6 +9,7 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+
 # Build the application
 # We use the --no-lint and other flags to speed up build since we assume dev checks passed
 RUN npm run build
@@ -26,7 +27,6 @@ RUN adduser --system --uid 1001 nextjs
 
 # Copy only necessary files from builder
 # Next.js standalone output includes node_modules and .next/server
-COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
