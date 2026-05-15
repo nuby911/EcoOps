@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { BentoCard } from '@/components/ui/BentoCard';
 import { Search, Truck, ArrowUp, AlertTriangle, Recycle, Wine, Wrench, Sprout, ArrowRight, Package } from 'lucide-react';
 import Link from 'next/link';

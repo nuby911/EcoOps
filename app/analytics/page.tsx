@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { BentoCard } from '@/components/ui/BentoCard';
 import { Target, Recycle, Cloud, TrendingUp, MoreVertical, Factory, Building, Warehouse } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
