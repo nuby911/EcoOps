@@ -47,7 +47,7 @@ Bagikan dampak Anda ke media sosial dengan infografis visual yang dihasilkan sec
 ### Instalasi
 1. Clone repositori:
    ```bash
-   git clone https://github.com/username/circular-metric.git
+   git clone https://github.com/nuby911/EcoOps.git
    ```
 2. Instal dependensi:
    ```bash
