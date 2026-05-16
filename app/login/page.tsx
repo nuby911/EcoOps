@@ -1,4 +1,5 @@
 import { login, signup, forgotPassword, updatePassword } from './actions';
+import { SubmitButton } from '@/components/auth/SubmitButton';
 import Link from 'next/link';
 
 export default async function LoginPage({
@@ -29,7 +30,10 @@ export default async function LoginPage({
           </p>
         </div>
 
-        <form className="space-y-4">
+        <form 
+          className="space-y-4"
+          action={isReset ? updatePassword : isForgot ? forgotPassword : isSignUp ? signup : login}
+        >
           {!isReset && (
             <div className="space-y-4">
               {isSignUp && (
@@ -103,12 +107,7 @@ export default async function LoginPage({
           )}
 
           <div className="pt-2">
-            <button
-              formAction={isReset ? updatePassword : isForgot ? forgotPassword : isSignUp ? signup : login}
-              className="w-full py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-[#0A0A0A] bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
-            >
-              {isReset ? 'Update Password' : isForgot ? 'Send Reset Link' : isSignUp ? 'Create Account' : 'Sign In'}
-            </button>
+            <SubmitButton isSignUp={isSignUp} isForgot={isForgot} isReset={isReset} />
           </div>
         </form>
 

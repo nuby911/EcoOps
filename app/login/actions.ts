@@ -27,8 +27,7 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
-  try {
-    const supabase = await createClient();
+  const supabase = await createClient();
 
   const data = {
     email: formData.get('email') as string,
@@ -40,16 +39,14 @@ export async function signup(formData: FormData) {
     }
   };
 
-  console.log('Signup attempt for:', data.email);
-  
-  const headerList = await headers();
-  const host = headerList.get('host') || 'localhost:3000';
-  const protocol = headerList.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+  const host = (await headers()).get('host') || 'localhost:3000';
+  const protocol = host.includes('localhost') ? 'http' : 'https';
   const origin = `${protocol}://${host}`;
   
-  console.log('Detected origin:', origin);
+  console.log('Signup Attempt:', data.email, 'Origin:', origin);
 
-    const { data: authData, error } = await supabase.auth.signUp({
+  try {
+    const { error } = await supabase.auth.signUp({
       ...data,
       options: {
         ...data.options,
@@ -62,13 +59,14 @@ export async function signup(formData: FormData) {
       return redirect(`/login?error=${encodeURIComponent(error.message)}&mode=signup`);
     }
     
-    console.log('Signup successful, redirecting...');
-    return redirect('/login?message=Check your email to confirm your account.');
+    console.log('Signup success. Confirmation email sent.');
   } catch (err: any) {
     if (err.digest?.startsWith('NEXT_REDIRECT')) throw err;
     console.error('Unexpected Signup Error:', err);
-    return redirect(`/login?error=An unexpected error occurred. Please try again.&mode=signup`);
+    return redirect(`/login?error=Server error. Please try again later.&mode=signup`);
   }
+
+  return redirect('/login?message=Check your email to confirm your account.');
 }
 
 export async function logoutAction() {
