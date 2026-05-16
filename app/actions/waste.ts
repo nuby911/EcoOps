@@ -4,6 +4,7 @@ import { db } from '@/lib/db';
 import { users, wasteLogs, wasteCategories } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 
 interface LogWasteParams {
   category: string;
@@ -35,38 +36,18 @@ export async function logWasteAction(params: LogWasteParams) {
     }
   }
 
-  // Calculate metrics based on category
-  let multiplier = 0;
-  let basePoints = 0;
+  // Fetch Category Info from DB (Dynamic)
+  const [categoryInfo] = await db.select()
+    .from(wasteCategories)
+    .where(eq(wasteCategories.name, category))
+    .limit(1);
 
-  switch (category.toLowerCase()) {
-    case 'plastic':
-      multiplier = 1.02;
-      basePoints = 15;
-      break;
-    case 'paper':
-      multiplier = 0.46;
-      basePoints = 20;
-      break;
-    case 'metal':
-      multiplier = 5.86;
-      basePoints = 30;
-      break;
-    case 'glass':
-      multiplier = 0.31;
-      basePoints = 10;
-      break;
-    case 'organic':
-      multiplier = 0.12;
-      basePoints = 5;
-      break;
-    default:
-      multiplier = 0.1;
-      basePoints = 5;
-  }
+  // Fallback multipliers if category not in DB yet
+  const multiplier = categoryInfo?.co2Multiplier || 0.1;
+  const pointsPerKg = categoryInfo?.pointsPerKg || 5;
 
   const carbonFootprint = weight * multiplier;
-  const pointsEarned = basePoints;
+  const pointsEarned = Math.round(weight * pointsPerKg);
 
   try {
     // 1. Insert waste log
@@ -79,32 +60,36 @@ export async function logWasteAction(params: LogWasteParams) {
       aiConfidenceScore,
     });
 
-    // 2. Fetch current user stats to increment
-    let currentUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    // 2. Fetch & Update user stats using a single transaction-like approach
+    const [currentUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     
-    // We expect the user to exist due to the signup action, but just in case:
-    if (currentUser.length === 0) {
-        await db.insert(users).values({
-          id: userId,
-          name: user.email?.split('@')[0] || 'User',
-          points: 0,
-          totalCo2: 0,
-        });
-        currentUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!currentUser) {
+      // Emergency fallback if user not synced yet
+      await db.insert(users).values({
+        id: userId,
+        name: user.email?.split('@')[0] || 'User',
+        points: pointsEarned,
+        totalCo2: carbonFootprint,
+      });
+    } else {
+      await db.update(users)
+        .set({ 
+          points: currentUser.points + pointsEarned, 
+          totalCo2: currentUser.totalCo2 + carbonFootprint, 
+          updatedAt: new Date() 
+        })
+        .where(eq(users.id, userId));
     }
 
-    const newPoints = currentUser[0].points + pointsEarned;
-    const newTotalCo2 = currentUser[0].totalCo2 + carbonFootprint;
-
-    // 3. Update user stats
-    await db.update(users)
-      .set({ points: newPoints, totalCo2: newTotalCo2, updatedAt: new Date() })
-      .where(eq(users.id, userId));
+    // 3. Clear cache to reflect changes immediately
+    revalidatePath('/');
+    revalidatePath('/profile');
+    revalidatePath('/inventory');
 
     return { success: true, carbonFootprint, pointsEarned };
   } catch (error) {
     console.error('Error logging waste:', error);
-    return { success: false, error: 'Failed to log waste' };
+    return { success: false, error: 'Gagal mencatat data sampah ke database.' };
   }
 }
 

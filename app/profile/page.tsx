@@ -63,7 +63,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { updateProfileAction, getProfileStats, deleteAccountAction } from '@/app/actions/user';
+import { updateProfileAction, deleteAccountAction } from '@/app/actions/user';
+import { getProfileStats, logoutAction } from '@/app/login/actions';
 import { toast } from 'sonner';
 
 interface ProfileData {
@@ -71,7 +72,7 @@ interface ProfileData {
     id: string;
     name: string;
     points: number;
-    total_co2: number;
+    totalCo2: number;
     location: string | null;
     role?: string;
   };
@@ -131,10 +132,7 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/login');
-    router.refresh();
+    await logoutAction();
   };
 
   const handleDeleteAccount = async () => {
@@ -153,13 +151,13 @@ export default function ProfilePage() {
   const handleShare = async (platform: string) => {
     if (!data) return;
     
-    const text = `Saya telah menyelamatkan ${data.user.total_co2.toFixed(1)} kg CO2 dan mengumpulkan ${data.user.points.toLocaleString()} Poin di CircularMetric! Jadilah pahlawan lingkungan bersama saya. 🌍♻️`;
+    const text = `Saya telah menyelamatkan ${data.user.totalCo2.toFixed(1)} kg CO2 dan mengumpulkan ${data.user.points.toLocaleString()} Poin di EcoOps! Jadilah pahlawan lingkungan bersama saya. 🌍♻️`;
     
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://circularmetric.app';
     const ogUrl = new URL('/api/og', baseUrl);
     ogUrl.searchParams.set('name', data.user.name);
     ogUrl.searchParams.set('points', data.user.points.toLocaleString());
-    ogUrl.searchParams.set('co2', data.user.total_co2.toFixed(1));
+    ogUrl.searchParams.set('co2', data.user.totalCo2.toFixed(1));
     ogUrl.searchParams.set('level', getEcoLevel(data.user.points).name);
     
     const url = ogUrl.toString();
@@ -407,7 +405,7 @@ export default function ProfilePage() {
             </div>
           </div>
           <div>
-            <p className="text-3xl font-bold tracking-tight text-on-surface">{user.total_co2.toFixed(1)} <span className="text-lg text-on-surface-variant font-normal">kg</span></p>
+            <p className="text-3xl font-bold tracking-tight text-on-surface">{user.totalCo2.toFixed(1)} <span className="text-lg text-on-surface-variant font-normal">kg</span></p>
             <p className="text-[11px] uppercase font-jetbrains font-bold tracking-widest text-on-surface-variant mt-1">CO₂ Diselamatkan</p>
           </div>
         </BentoCard>

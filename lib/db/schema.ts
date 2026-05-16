@@ -16,6 +16,7 @@ export const wasteCategories = pgTable('waste_categories', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull().unique(), // Plastic, Paper, Organic, etc.
   pointsPerKg: integer('points_per_kg').notNull(),
+  co2Multiplier: doublePrecision('co2_multiplier').default(0.1).notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 

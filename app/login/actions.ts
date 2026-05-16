@@ -1,11 +1,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { users, wasteLogs } from '@/lib/db/schema';
+import { eq, desc } from 'drizzle-orm';
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -26,7 +27,8 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
-  const supabase = await createClient();
+  try {
+    const supabase = await createClient();
 
   const data = {
     email: formData.get('email') as string,
@@ -38,31 +40,53 @@ export async function signup(formData: FormData) {
     }
   };
 
-  const origin = (await cookies()).get('origin')?.value || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-
-  const { data: authData, error } = await supabase.auth.signUp({
-    ...data,
-    options: {
-      ...data.options,
-      emailRedirectTo: `${origin}/auth/callback`,
-    }
-  });
-
-  if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}&mode=signup`);
-  }
+  console.log('Signup attempt for:', data.email);
   
-  // User record will be created in auth callback after email confirmation
-  redirect('/login?message=Check your email to confirm your account.');
+  const headerList = await headers();
+  const host = headerList.get('host') || 'localhost:3000';
+  const protocol = headerList.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+  const origin = `${protocol}://${host}`;
+  
+  console.log('Detected origin:', origin);
+
+    const { data: authData, error } = await supabase.auth.signUp({
+      ...data,
+      options: {
+        ...data.options,
+        emailRedirectTo: `${origin}/auth/callback`,
+      }
+    });
+
+    if (error) {
+      console.error('Supabase Auth Error:', error.message);
+      return redirect(`/login?error=${encodeURIComponent(error.message)}&mode=signup`);
+    }
+    
+    console.log('Signup successful, redirecting...');
+    return redirect('/login?message=Check your email to confirm your account.');
+  } catch (err: any) {
+    if (err.digest?.startsWith('NEXT_REDIRECT')) throw err;
+    console.error('Unexpected Signup Error:', err);
+    return redirect(`/login?error=An unexpected error occurred. Please try again.&mode=signup`);
+  }
+}
+
+export async function logoutAction() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect('/login');
 }
 
 export async function forgotPassword(formData: FormData) {
   const supabase = await createClient();
   const email = formData.get('email') as string;
-  const origin = (await cookies()).get('origin')?.value || ''; // fallback or use headers
+  const headerList = await headers();
+  const host = headerList.get('host');
+  const protocol = host?.includes('localhost') ? 'http' : 'https';
+  const origin = `${protocol}://${host}`;
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=/login?mode=reset`,
+    redirectTo: `${origin}/auth/callback?next=/login?mode=reset`,
   });
 
   if (error) {
@@ -83,4 +107,41 @@ export async function updatePassword(formData: FormData) {
   }
 
   redirect('/login?message=Password updated successfully. You can now sign in.');
+}
+export async function getProfileStats() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: 'Unauthorized' };
+
+  try {
+    const [userData] = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
+    if (!userData) return { success: false, error: 'User not found' };
+
+    const logs = await db.select()
+      .from(wasteLogs)
+      .where(eq(wasteLogs.userId, user.id))
+      .orderBy(desc(wasteLogs.createdAt));
+
+    const totalWaste = logs.reduce((sum, log) => sum + log.weight, 0);
+    const avgConfidence = logs.length > 0 
+      ? logs.reduce((sum, log) => sum + log.aiConfidenceScore, 0) / logs.length 
+      : 0;
+
+    return {
+      success: true,
+      data: {
+        user: userData,
+        stats: {
+          totalWaste,
+          avgConfidence,
+          logCount: logs.length
+        },
+        wasteLogs: logs
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching profile stats:', error);
+    return { success: false, error: 'Failed to fetch data' };
+  }
 }
