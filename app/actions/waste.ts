@@ -108,36 +108,3 @@ export async function logWasteAction(params: LogWasteParams) {
   }
 }
 
-export async function getWasteCategories() {
-  try {
-    return await db.select().from(wasteCategories).orderBy(wasteCategories.name);
-  } catch (error) {
-    console.error('Error fetching waste categories:', error);
-    return [];
-  }
-}
-
-export async function updateWastePoints(categoryPoints: { id: string; points: number }[]) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) return { success: false, error: 'Unauthorized' };
-
-  // Check if user is admin
-  const [dbUser] = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
-  if (dbUser?.role !== 'admin') {
-    return { success: false, error: 'Access denied. Admin only.' };
-  }
-
-  try {
-    for (const item of categoryPoints) {
-      await db.update(wasteCategories)
-        .set({ pointsPerKg: item.points, updatedAt: new Date() })
-        .where(eq(wasteCategories.id, item.id));
-    }
-    return { success: true };
-  } catch (error) {
-    console.error('Error updating waste points:', error);
-    return { success: false, error: 'Failed to update points' };
-  }
-}

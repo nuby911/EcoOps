@@ -12,6 +12,14 @@ export default function Dashboard() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const supabase = createClient();
 
+  const getEcoLevel = (points: number) => {
+    if (points >= 2500) return 'Circular Master';
+    if (points >= 1000) return 'Eco Hero';
+    if (points >= 500) return 'Waste Warrior';
+    if (points >= 100) return 'Eco Starter';
+    return 'Novice';
+  };
+
   useEffect(() => {
     const fetchStats = async () => {
       // 1. Fetch personal stats
@@ -152,7 +160,7 @@ export default function Dashboard() {
               </div>
               <div className="bg-primary-dim border border-primary text-primary inline-flex items-center px-3 py-1 rounded-full font-jetbrains text-xs uppercase tracking-wider mb-1">
                 <Award className="w-4 h-4 mr-1" />
-                Eco Hero
+                {getEcoLevel(totalPoints)}
               </div>
             </div>
           </BentoCard>

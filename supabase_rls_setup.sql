@@ -35,3 +35,38 @@ USING (auth.uid() = user_id);
 CREATE POLICY "Allow users to insert their own logs"
 ON waste_logs FOR INSERT
 WITH CHECK (auth.uid() = user_id);
+
+-- 3. Users can delete their own logs (via cascade when account is deleted)
+CREATE POLICY "Allow users to delete their own logs"
+ON waste_logs FOR DELETE
+USING (auth.uid() = user_id);
+
+-- 4. Users can delete their own record (Delete Account feature)
+CREATE POLICY "Allow users to delete their own record"
+ON users FOR DELETE
+USING (auth.uid() = id);
+
+-- ==========================================
+-- Policies for 'waste_categories' table
+-- ==========================================
+
+-- 1. Everyone can read waste categories
+ALTER TABLE waste_categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access to waste categories"
+ON waste_categories FOR SELECT
+USING (true);
+
+-- ==========================================
+-- Policies for 'transactions' table
+-- ==========================================
+
+-- 1. Everyone can read their own transactions
+ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow users to read their own transactions"
+ON transactions FOR SELECT
+USING (auth.uid() = user_id);
+
+-- 2. Users can only insert their own transactions
+CREATE POLICY "Allow users to insert their own transactions"
+ON transactions FOR INSERT
+WITH CHECK (auth.uid() = user_id);

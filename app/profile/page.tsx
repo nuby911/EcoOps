@@ -30,6 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
 import { 
   Wallet, 
   Trash2, 
@@ -62,7 +63,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { updateProfileAction, getProfileStats } from '@/app/actions/user';
+import { updateProfileAction, getProfileStats, deleteAccountAction } from '@/app/actions/user';
 import { toast } from 'sonner';
 
 interface ProfileData {
@@ -72,6 +73,7 @@ interface ProfileData {
     points: number;
     total_co2: number;
     location: string | null;
+    role?: string;
   };
   stats: {
     totalWaste: number;
@@ -89,6 +91,8 @@ export default function ProfilePage() {
   const [newName, setNewName] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsAccountDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -131,6 +135,19 @@ export default function ProfilePage() {
     await supabase.auth.signOut();
     router.push('/login');
     router.refresh();
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    const result = await deleteAccountAction();
+    if (result.success) {
+      toast.success('Akun berhasil dihapus');
+      router.push('/login');
+      router.refresh();
+    } else {
+      toast.error(result.error || 'Gagal menghapus akun');
+      setIsDeleting(false);
+    }
   };
 
   const handleShare = async (platform: string) => {
@@ -197,7 +214,15 @@ export default function ProfilePage() {
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <p className="text-on-surface-variant">Data profil tidak ditemukan. Silakan login kembali.</p>
+        <p className="text-on-surface-variant">Data profil tidak ditemukan atau sesi berakhir.</p>
+        <Button 
+          variant="outline" 
+          onClick={handleLogout}
+          className="gap-2 bg-error/10 border-error/30 text-error hover:bg-error/20"
+        >
+          <LogOut className="w-4 h-4" />
+          Keluar & Login Kembali
+        </Button>
       </div>
     );
   }
@@ -231,7 +256,7 @@ export default function ProfilePage() {
               </div>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                 <DialogTrigger render={
                   <Button variant="outline" className="gap-2 bg-surface/50 backdrop-blur-md border-border-bento">
@@ -272,6 +297,7 @@ export default function ProfilePage() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
+
               <Button
                 variant="outline"
                 onClick={handleLogout}
@@ -281,6 +307,44 @@ export default function ProfilePage() {
                 <LogOut className="w-4 h-4" />
                 {isLoggingOut ? 'Keluar...' : 'Keluar'}
               </Button>
+
+              <Dialog open={isDeleteDialogOpen} onOpenChange={setIsAccountDeleteDialogOpen}>
+                <DialogTrigger render={
+                  <Button
+                    variant="outline"
+                    className="gap-2 bg-error/5 border-error/20 text-error hover:bg-error/10 hover:text-error"
+                  >
+                    <Trash2 className="w-4 h-4" /> Hapus Akun
+                  </Button>
+                } />
+                <DialogContent className="glass border-error/20 sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle className="text-error flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5" /> Konfirmasi Penghapusan Akun
+                    </DialogTitle>
+                    <DialogDescription className="pt-2">
+                      Apakah Anda yakin ingin menghapus akun? Tindakan ini **permanen** dan akan menghapus:
+                      <ul className="list-disc list-inside mt-2 space-y-1 text-xs">
+                        <li>Semua poin dan peringkat Anda</li>
+                        <li>Riwayat log sampah dan kontribusi CO2</li>
+                        <li>Akses login ke aplikasi EcoOps</li>
+                      </ul>
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter className="gap-2 sm:gap-0">
+                    <Button variant="ghost" onClick={() => setIsAccountDeleteDialogOpen(false)} disabled={isDeleting}>
+                      Batal
+                    </Button>
+                    <Button 
+                      onClick={handleDeleteAccount} 
+                      disabled={isDeleting} 
+                      className="bg-error text-white hover:bg-error/90"
+                    >
+                      {isDeleting ? 'Menghapus...' : 'Ya, Hapus Permanen'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
 

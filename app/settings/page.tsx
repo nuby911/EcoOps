@@ -9,15 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useSettings } from '@/components/providers/SettingsProvider';
-import { Settings, Cpu, Accessibility, ShieldCheck, Download, Save } from 'lucide-react';
+import { Settings, Cpu, Accessibility } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-
-import { createClient } from '@/lib/supabase/client';
-import { getWasteCategories, updateWastePoints } from '@/app/actions/waste';
-import { logoutAction } from '@/app/actions/auth';
 
 export default function SettingsPage() {
   const { 
@@ -30,68 +25,7 @@ export default function SettingsPage() {
     isLoaded
   } = useSettings();
 
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [wastePoints, setWastePoints] = useState<any[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const supabase = createClient();
-
-  useEffect(() => {
-    async function init() {
-      // Check role
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-        
-        const adminStatus = userData?.role === 'admin';
-        setIsAdmin(adminStatus);
-
-        // Fetch categories if admin
-        if (adminStatus) {
-          const categories = await getWasteCategories();
-          setWastePoints(categories.map(c => ({ id: c.id, name: c.name, points: c.pointsPerKg })));
-        }
-      }
-    }
-    init();
-  }, [supabase]);
-
   if (!isLoaded) return null;
-
-  const handleExportCSV = () => {
-    const data = [
-      ['Date', 'Category', 'Weight', 'Points'],
-      ['2026-05-14', 'Plastic', '0.5kg', '10'],
-      ['2026-05-14', 'Paper', '1.2kg', '6'],
-    ];
-    const csvContent = "data:text/csv;charset=utf-8," + data.map(e => e.join(",")).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "compliance_report.csv");
-    document.body.appendChild(link);
-    link.click();
-    toast.success('Laporan kepatuhan berhasil diekspor ke CSV.');
-  };
-
-  const handleSaveChanges = async () => {
-    setIsSaving(true);
-    const result = await updateWastePoints(wastePoints);
-    if (result.success) {
-      toast.success('Berhasil!', {
-        description: 'Perubahan poin kategori sampah telah disimpan ke database.',
-      });
-    } else {
-      toast.error('Gagal!', {
-        description: 'Terjadi kesalahan: ' + result.error,
-      });
-    }
-    setIsSaving(false);
-  };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -103,7 +37,7 @@ export default function SettingsPage() {
       </header>
 
       <Tabs defaultValue="ai" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+        <TabsList className="grid w-full grid-cols-2 lg:w-[300px]">
           <TabsTrigger value="ai" className="flex items-center gap-2">
             <Cpu className="w-4 h-4" />
             <span>AI & Kamera</span>
@@ -112,12 +46,6 @@ export default function SettingsPage() {
             <Accessibility className="w-4 h-4" />
             <span>Aksesibilitas</span>
           </TabsTrigger>
-          {isAdmin && (
-            <TabsTrigger value="admin" className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4" />
-              <span>Admin</span>
-            </TabsTrigger>
-          )}
         </TabsList>
 
         <motion.div
@@ -237,92 +165,8 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="admin" className="space-y-4 mt-6">
-            <Card className="glass border-none shadow-xl">
-              <CardHeader>
-                <CardTitle>Admin / Operasional</CardTitle>
-                <CardDescription>
-                  Konfigurasi parameter ekonomi dan ekspor data kepatuhan.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label>Nilai Poin Kategori Sampah</Label>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="gap-2" 
-                      onClick={handleSaveChanges}
-                      disabled={isSaving}
-                    >
-                      {isSaving ? 'Menyimpan...' : (
-                        <>
-                          <Save className="w-4 h-4" /> Simpan Perubahan
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Kategori</TableHead>
-                        <TableHead className="w-[150px]">Poin / kg</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {wastePoints.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={2} className="text-center text-muted-foreground">
-                            Memuat data kategori...
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        wastePoints.map((item, idx) => (
-                          <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                value={item.points}
-                                onChange={(e) => {
-                                  const newPoints = [...wastePoints];
-                                  newPoints[idx].points = parseInt(e.target.value) || 0;
-                                  setWastePoints(newPoints);
-                                }}
-                                className="h-8"
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                <div className="pt-4 border-t border-border/50">
-                  <Label>Laporan Kepatuhan</Label>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Unduh semua log transaksi sampah dalam format CSV untuk pelaporan.
-                  </p>
-                  <Button onClick={handleExportCSV} className="gap-2">
-                    <Download className="w-4 h-4" /> Ekspor Laporan (.CSV)
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </motion.div>
       </Tabs>
-
-      <div className="pt-8 mt-8 border-t border-border/50">
-        <form action={logoutAction}>
-          <Button variant="destructive" type="submit" className="w-full sm:w-auto gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-            Keluar Aplikasi (Log Out)
-          </Button>
-        </form>
-      </div>
     </div>
   );
 }

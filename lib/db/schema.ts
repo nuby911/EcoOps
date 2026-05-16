@@ -21,7 +21,7 @@ export const wasteCategories = pgTable('waste_categories', {
 
 export const wasteLogs = pgTable('waste_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id).notNull(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   category: text('category').notNull(), // Plastic, Paper, Organic, Metal, Glass
   weight: doublePrecision('weight').notNull(),
   carbonFootprint: doublePrecision('carbon_footprint').notNull(),
@@ -32,7 +32,7 @@ export const wasteLogs = pgTable('waste_logs', {
 
 export const transactions = pgTable('transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').references(() => users.id).notNull(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
   amount: integer('amount').notNull(), // can be points or currency
   transactionType: text('transaction_type').$type<'deposit' | 'withdrawal'>().notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

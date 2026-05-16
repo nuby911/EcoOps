@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -11,6 +14,20 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     
     if (!error) {
+      // Create user record if it doesn't exist
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const existingUser = await db.select().from(users).where(eq(users.id, user.id)).limit(1);
+        
+        if (existingUser.length === 0) {
+          await db.insert(users).values({
+            id: user.id,
+            name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+            points: 0,
+            totalCo2: 0,
+          });
+        }
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

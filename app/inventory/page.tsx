@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { BentoCard } from '@/components/ui/BentoCard';
-import { Search, Truck, ArrowUp, AlertTriangle, Recycle, Wine, Wrench, Sprout, ArrowRight, Package } from 'lucide-react';
+import { Search, ArrowUp, AlertTriangle, Recycle, Wine, Wrench, Sprout, ArrowRight, Package } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
@@ -55,20 +55,6 @@ export default function Inventory() {
         <div>
           <h2 className="text-4xl font-bold tracking-tight text-on-surface">Inventory Status</h2>
           <p className="text-on-surface-variant mt-1">Real-time overview of categorized waste stock.</p>
-        </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="relative flex-grow sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant w-5 h-5" />
-            <input 
-              type="text" 
-              placeholder="Search inventory..." 
-              className="w-full bg-surface-container-lowest border border-[#262626] rounded-lg py-2.5 pl-10 pr-4 text-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-colors placeholder:text-on-surface-variant outline-none"
-            />
-          </div>
-          <button className="bg-primary-container text-[#0A0A0A] font-jetbrains text-xs uppercase tracking-wider font-bold py-3 px-6 rounded-lg hover:bg-primary transition-colors flex items-center justify-center gap-2 whitespace-nowrap">
-            <Truck className="w-5 h-5" />
-            Request Pickup
-          </button>
         </div>
       </div>
 

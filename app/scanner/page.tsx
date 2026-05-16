@@ -276,7 +276,7 @@ export default function ScannerPage() {
               {scanLog.length === 0 ? 'No items logged yet' : `${scanLog.length} item${scanLog.length !== 1 ? 's' : ''} this session`}
             </p>
           </div>
-          <Link href="#" className="font-jetbrains text-xs uppercase tracking-wider text-primary hover:underline">
+          <Link href="/inventory" className="font-jetbrains text-xs uppercase tracking-wider text-primary hover:underline">
             View All
           </Link>
         </div>

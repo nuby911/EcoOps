@@ -12,7 +12,7 @@
 
   --color-primary: #22C55E;
   --color-primary-hover: #16a34a;
-  --color-primary-dim: var(--primary-dim);
+  --color-primary-dim: rgba(34, 197, 94, 0.05);
   --color-primary-container: #22c55e;
   --color-on-primary-container: #004b1e;
 
@@ -37,6 +37,7 @@
 
   --font-inter: var(--font-inter);
   --font-jetbrains: var(--font-jetbrains-mono);
+  --font-geist: var(--font-geist);
 
   --spacing-bento-gap: 12px;
   --spacing-inner-padding: 20px;
@@ -75,7 +76,19 @@ html {
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid var(--glass-border);
+  border: 1px solid var(--glass-border);
+}
+
+.glass-card {
+  background: rgba(23, 23, 23, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-blur {
+  background: rgba(15, 15, 15, 0.95);
+  backdrop-filter: blur(8px);
 }
 
 .pb-safe {
@@ -230,20 +243,27 @@ html {
 
   /* Custom EcoOps Variables - Dark Mode */
   --background-custom: #0A0A0A;
-  --surface-bento: #171717;
-  --border-bento: #262626;
-  --border-hover: #404040;
+  --surface-bento: rgba(23, 23, 23, 0.7);
+  --border-bento: rgba(255, 255, 255, 0.05);
+  --border-hover: rgba(255, 255, 255, 0.1);
   --primary-dim: rgba(34, 197, 94, 0.1);
-  --surface: #131313;
-  --surface-bright: #3a3939;
-  --surface-lowest: #0e0e0e;
-  --surface-low: #1c1b1b;
-  --surface-container: #201f1f;
-  --surface-high: #2a2a2a;
-  --surface-highest: #353534;
-  --surface-variant: #353534;
-  --on-surface: #e5e2e1;
+  --surface: #12131a;
+  --surface-bright: #383940;
+  --surface-lowest: #0c0e14;
+  --surface-low: #1a1b22;
+  --surface-container: #1e1f26;
+  --surface-high: #282a31;
+  --surface-highest: #33343c;
+  --surface-variant: #33343c;
+  --on-surface: #e2e1eb;
   --on-surface-variant: #bccbb9;
-  --glass-bg: rgba(19, 19, 19, 0.75);
+  --glass-bg: rgba(23, 23, 23, 0.6);
   --glass-border: rgba(255, 255, 255, 0.05);
+}
+
+@layer utilities {
+  .bg-grid {
+    background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
 }

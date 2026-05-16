@@ -132,7 +132,9 @@ export default function Achievements() {
               <Star className="text-primary-container w-6 h-6" fill="currentColor" />
               Eco Hero Badges
             </h3>
-            <span className="font-jetbrains text-xs uppercase text-on-surface-variant">12 / 24 UNLOCKED</span>
+            <span className="font-jetbrains text-xs uppercase text-on-surface-variant">
+              {Object.values(badgeThresholds).filter(t => points >= t).length} / {Object.values(badgeThresholds).length} UNLOCKED
+            </span>
           </div>
           
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -181,7 +183,14 @@ export default function Achievements() {
               <ListOrdered className="text-secondary-fixed w-6 h-6" />
               Facility Rank
             </h3>
-            <button className="font-jetbrains text-[10px] uppercase font-bold text-primary-container hover:text-primary transition-colors tracking-widest">FULL LIST</button>
+            <a
+              href="https://wa.me/6285609199965"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-jetbrains text-[10px] uppercase font-bold text-primary-container hover:text-primary transition-colors tracking-widest"
+            >
+              HUBUNGI CS
+            </a>
           </div>
           
           <div className="flex-1 flex flex-col gap-3">
